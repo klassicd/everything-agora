@@ -1,44 +1,53 @@
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightEndOnRectangleIcon,
+  ArrowLeftEndOnRectangleIcon,
+} from "@heroicons/react/24/solid";
+import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 const navigation = [
-  { name: "Home", to: "/" },
+  { name: "Attest", to: "/" },
   { name: "Leaderboard", to: "/leaderboard" },
   { name: "Profile", to: "/profile" },
 ];
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { login, logout, authenticated } = usePrivy();
 
   return (
     <header className="bg-white">
       <nav
         aria-label="Global"
-        className="flex items-center justify-between p-6 lg:px-8"
+        className="flex items-center justify-between p-6 md:px-8"
       >
-        <div className="flex lg:flex-1">
-          <Link to="/" className="-m-1.5 p-1.5">
+        <div className="flex items-center md:flex-1">
+          <Link to="/" className="-m-1.5 flex items-center p-1.5">
             <span className="sr-only">Everything Agora</span>
             <img
               alt=""
               src="/images/eth-glyph-colored.png"
               className="h-8 w-auto"
             />
+            <span className="ml-2 hidden text-2xl font-semibold text-gray-900 lg:inline-block">
+              Everything Agora
+            </span>
           </Link>
         </div>
-        <div className="flex lg:hidden">
+        <div className="flex md:hidden">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
           >
             <span className="sr-only">Open main menu</span>
-            <Bars3Icon aria-hidden="true" className="size-6" />
+            <Bars3Icon aria-hidden="true" className="h-6 w-6" />
           </button>
         </div>
-        <div className="hidden lg:flex lg:gap-x-12">
+        <div className="hidden md:flex md:gap-x-12">
           {navigation.map((item) => (
             <Link
               key={item.name}
@@ -49,27 +58,45 @@ export default function Header() {
             </Link>
           ))}
         </div>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link to="/login" className="text-sm/6 font-semibold text-gray-900">
-            Log in <span aria-hidden="true">&rarr;</span>
-          </Link>
+        <div className="hidden md:flex md:flex-1 md:justify-end">
+          <button
+            onClick={authenticated ? logout : login}
+            className="flex items-center text-sm/6 font-semibold text-gray-900"
+          >
+            {authenticated ? (
+              <ArrowLeftEndOnRectangleIcon
+                className="mr-1 h-6 w-6"
+                aria-hidden="true"
+              />
+            ) : (
+              <ArrowRightEndOnRectangleIcon
+                className="mr-1 h-6 w-6"
+                aria-hidden="true"
+              />
+            )}
+            {authenticated ? "Log out" : "Log in"}
+          </button>
         </div>
       </nav>
+
       <Dialog
         open={mobileMenuOpen}
         onClose={setMobileMenuOpen}
-        className="lg:hidden"
+        className="md:hidden"
       >
         <div className="fixed inset-0 z-10" />
         <DialogPanel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
-            <Link to="/" className="-m-1.5 p-1.5">
+            <Link to="/" className="-m-1.5 flex items-center p-1.5">
               <span className="sr-only">Everything Agora</span>
               <img
                 alt=""
-                src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+                src="/images/eth-glyph-colored.png"
                 className="h-8 w-auto"
               />
+              <span className="ml-2 text-2xl font-semibold text-gray-900">
+                Everything Agora
+              </span>
             </Link>
             <button
               type="button"
@@ -77,7 +104,7 @@ export default function Header() {
               className="-m-2.5 rounded-md p-2.5 text-gray-700"
             >
               <span className="sr-only">Close menu</span>
-              <XMarkIcon aria-hidden="true" className="size-6" />
+              <XMarkIcon aria-hidden="true" className="h-6 w-6" />
             </button>
           </div>
           <div className="mt-6 flow-root">
@@ -95,13 +122,31 @@ export default function Header() {
                 ))}
               </div>
               <div className="py-6">
-                <Link
-                  to="/login"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+
+                    if (authenticated) {
+                      logout();
+                    } else {
+                      login();
+                    }
+                  }}
+                  className="-mx-3 block flex items-center rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
                 >
-                  Log in
-                </Link>
+                  {authenticated ? (
+                    <ArrowLeftEndOnRectangleIcon
+                      className="mr-1 h-6 w-6"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <ArrowRightEndOnRectangleIcon
+                      className="mr-1 h-6 w-6"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {authenticated ? "Log out" : "Log in"}
+                </button>
               </div>
             </div>
           </div>

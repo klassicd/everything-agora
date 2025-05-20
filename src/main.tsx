@@ -1,3 +1,4 @@
+import { PrivyProvider } from "@privy-io/react-auth";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -22,7 +23,9 @@ if (!rootElement.innerHTML) {
   const root = createRoot(rootElement);
   root.render(
     <StrictMode>
-      <RouterProvider router={router} />
+      <PrivyProvider appId={import.meta.env.VITE_PRIVY_APP_ID}>
+        <RouterProvider router={router} />
+      </PrivyProvider>
     </StrictMode>,
   );
 }
