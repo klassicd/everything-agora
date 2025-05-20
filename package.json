@@ -18,7 +18,8 @@
     "@tanstack/react-router-devtools": "^1.120.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwindcss": "^4.1.7"
+    "tailwindcss": "^4.1.7",
+    "viem": "^2.30.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
