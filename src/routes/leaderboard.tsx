@@ -5,5 +5,9 @@ export const Route = createFileRoute("/leaderboard")({
 });
 
 function Leaderboard() {
-  return <div className="p-2">Hello from Leaderboard!</div>;
+  return (
+    <div>
+      <h3>Leaderboard</h3>
+    </div>
+  );
 }
