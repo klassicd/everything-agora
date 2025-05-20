@@ -23,7 +23,10 @@ if (!rootElement.innerHTML) {
   const root = createRoot(rootElement);
   root.render(
     <StrictMode>
-      <PrivyProvider appId={import.meta.env.VITE_PRIVY_APP_ID}>
+      <PrivyProvider
+        appId={import.meta.env.VITE_PRIVY_APP_ID}
+        clientId={import.meta.env.VITE_PRIVY_CLIENT_ID}
+      >
         <RouterProvider router={router} />
       </PrivyProvider>
     </StrictMode>,
