@@ -168,7 +168,7 @@ export default function Index() {
 
               <div className="mt-4">
                 <button onClick={submitNickname} className="btn-primary">
-                  Write Review
+                  Continue
                 </button>
               </div>
             </div>
