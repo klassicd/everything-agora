@@ -132,7 +132,7 @@ export default function Index() {
       )}
 
       {step >= 2 && (
-        <>
+        <div className="pt-4">
           <h2 className="mb-4 text-xl font-semibold">
             Authenticate &amp; Choose a Nickname
           </h2>
@@ -167,17 +167,19 @@ export default function Index() {
               </label>
 
               <div className="mt-4">
-                <button onClick={submitNickname} className="btn-primary">
-                  Continue
-                </button>
+                {step == 2 && (
+                  <button onClick={submitNickname} className="btn-primary">
+                    Continue
+                  </button>
+                )}
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {step === 3 && (
-        <>
+        <div className="pt-4">
           <h2 className="mb-4 text-xl font-semibold">Leave a Review</h2>
           <textarea
             className="w-full rounded border p-2"
@@ -195,7 +197,7 @@ export default function Index() {
               Start Over
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
