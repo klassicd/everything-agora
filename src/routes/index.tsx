@@ -53,6 +53,35 @@ export default function Index() {
     })();
   }, [query, step, getAccessToken, baseUrl]);
 
+  useEffect(() => {
+    const fetchNickname = async () => {
+      if (!authenticated || !user) return;
+
+      try {
+        const token = await getAccessToken();
+        const res = await fetch(`${baseUrl}/users/me`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.nickname) {
+            setCustomNick(data.nickname);
+            setStep(2);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch nickname:", error);
+      }
+    };
+
+    fetchNickname();
+  }, [authenticated, user, getAccessToken, baseUrl]);
+
   const submitAttestation = async () => {
     if (!selected || !user) return;
     const token = await getAccessToken();
@@ -98,15 +127,15 @@ export default function Index() {
 
           {authenticated && user ? (
             <>
-              <p className="mb-4 text-gray-700">
-                Optionally pick a nickname to help recognize those who give
-                their time, and be recognized yourself.
-              </p>
               <p className="mb-2">
                 Logged in as:{" "}
                 {isWalletAccount(user.linkedAccounts?.[0])
                   ? user.linkedAccounts[0].address
                   : "Unknown account"}
+              </p>
+              <p className="mb-4 text-gray-700">
+                Optionally pick a nickname to help recognize those who give
+                their time, and be recognized yourself.
               </p>
             </>
           ) : (
@@ -120,7 +149,7 @@ export default function Index() {
               {/* custom nickname only */}
               <label className="flex flex-col">
                 <span className="ml-2">
-                  Custom nickname{" "}
+                  Your Nickname{" "}
                   <span className="text-sm text-gray-500">(optional)</span>
                 </span>
                 <input
@@ -133,7 +162,7 @@ export default function Index() {
               </label>
 
               <div className="mt-4">
-                {step == 1 && (
+                {!customNick && (
                   <Button onClick={submitNickname} variant="primary">
                     Continue
                   </Button>
