@@ -14,9 +14,8 @@ export const Route = createFileRoute("/")({
 });
 
 interface User {
-  id: string;
   nickname: string;
-  walletAddress: string;
+  address: string;
 }
 
 function isWalletAccount(account: LinkedAccountWithMetadata) {
@@ -34,22 +33,19 @@ export default function Index() {
   const { authenticated, user, login, getAccessToken } = usePrivy();
   // console.log(user);
 
-  // Step 1: search users
+  // Step 1: Search sellers
   useEffect(() => {
     if (step !== 1) return;
     (async () => {
       try {
-        // const token = await getAccessToken();
-        // const res = await fetch(`/users?q=${encodeURIComponent(query)}`, {
-        //   headers: { Authorization: `Bearer ${token}` },
-        // });
-        const res = {
-          ok: true,
-          json: async () => [
-            { id: "1", nickname: "Alice", walletAddress: "0xAliceWallet" },
-            { id: "2", nickname: "Bob", walletAddress: "0xBobWallet" },
-          ],
-        };
+        const token = await getAccessToken();
+        const baseUrl = import.meta.env.VITE_API_URL; // Use environment variable for base URL
+        const res = await fetch(
+          `${baseUrl}/users?q=${encodeURIComponent(query)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         if (!res.ok) throw new Error();
         const data: User[] = await res.json();
         setOptions(data);
@@ -73,7 +69,7 @@ export default function Index() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        sellerAddress: selected.walletAddress,
+        sellerAddress: selected.address,
         buyerAddress,
         reviewText,
       }),
@@ -120,7 +116,7 @@ export default function Index() {
             <ComboboxOptions className="mt-1 max-h-60 overflow-auto rounded border">
               {options.map((opt) => (
                 <ComboboxOption
-                  key={opt.id}
+                  key={opt.address}
                   value={opt}
                   className="cursor-pointer px-2 py-1 hover:bg-gray-100"
                 >
