@@ -61,7 +61,7 @@ export default function Header() {
         <div className="hidden md:flex md:flex-1 md:justify-end">
           <button
             onClick={authenticated ? logout : login}
-            className="flex items-center text-sm/6 font-semibold text-gray-900"
+            className="flex cursor-pointer items-center text-sm/6 font-semibold text-gray-900"
           >
             {authenticated ? (
               <ArrowLeftEndOnRectangleIcon
@@ -132,7 +132,7 @@ export default function Header() {
                       login();
                     }
                   }}
-                  className="-mx-3 block flex items-center rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+                  className="-mx-3 block flex cursor-pointer items-center rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
                 >
                   {authenticated ? (
                     <ArrowLeftEndOnRectangleIcon
