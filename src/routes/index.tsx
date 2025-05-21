@@ -336,11 +336,6 @@ export default function Index() {
 
         {authenticated && user ? (
           <>
-            <p className="mb-2">
-              Logged in as:{" "}
-              {user.linkedAccounts.find(isWalletAccount)?.address ??
-                "Unknown account"}
-            </p>
             <p className="mb-4 text-gray-700">
               Optionally pick a nickname to help recognize those who give their
               time, and be recognized yourself. A nickname is required to vouch.
