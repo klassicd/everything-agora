@@ -77,7 +77,7 @@ export default function Index() {
 
   const submitNickname = async () => {
     const token = await getAccessToken();
-    await fetch(`${baseUrl}/users`, {
+    await fetch(`${baseUrl}/users/me`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -91,13 +91,67 @@ export default function Index() {
   return (
     <div className="mx-auto max-w-md p-4">
       {step >= 1 && (
+        <div className="pt-4">
+          <h2 className="mb-4 text-xl font-semibold">
+            Join & Vouch For Your Community
+          </h2>
+
+          {authenticated && user ? (
+            <>
+              <p className="mb-4 text-gray-700">
+                Optionally pick a nickname to help recognize those who give
+                their time, and be recognized yourself.
+              </p>
+              <p className="mb-2">
+                Logged in as:{" "}
+                {isWalletAccount(user.linkedAccounts?.[0])
+                  ? user.linkedAccounts[0].address
+                  : "Unknown account"}
+              </p>
+            </>
+          ) : (
+            <Button onClick={login} variant="primary">
+              Log in to Privy
+            </Button>
+          )}
+
+          {authenticated && user && (
+            <div className="mt-4 space-y-4">
+              {/* custom nickname only */}
+              <label className="flex flex-col">
+                <span className="ml-2">
+                  Custom nickname{" "}
+                  <span className="text-sm text-gray-500">(optional)</span>
+                </span>
+                <input
+                  type="text"
+                  value={customNick}
+                  onChange={(e) => setCustomNick(e.target.value)}
+                  placeholder="Enter your nickname"
+                  className="mt-1 w-full rounded border px-2 py-1"
+                />
+              </label>
+
+              <div className="mt-4">
+                {step == 1 && (
+                  <Button onClick={submitNickname} variant="primary">
+                    Continue
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {step >= 2 && (
         <>
           <h2 className="mb-4 text-xl font-semibold">Vouch: Who helped you?</h2>
           <Combobox
             value={selected}
             onChange={(opt: User) => {
               setSelected(opt);
-              setStep(2);
+              setStep(3);
             }}
           >
             <ComboboxInput
@@ -123,53 +177,6 @@ export default function Index() {
             </ComboboxOptions>
           </Combobox>
         </>
-      )}
-
-      {step >= 2 && (
-        <div className="pt-4">
-          <h2 className="mb-4 text-xl font-semibold">
-            Authenticate &amp; Choose a Nickname
-          </h2>
-          {authenticated && user ? (
-            <p className="mb-2">
-              Logged in as:{" "}
-              {isWalletAccount(user.linkedAccounts?.[0])
-                ? user.linkedAccounts[0].address
-                : "Unknown account"}
-            </p>
-          ) : (
-            <Button onClick={login} variant="secondary">
-              Log in to Privy
-            </Button>
-          )}
-
-          {authenticated && user && (
-            <div className="mt-4 space-y-4">
-              {/* custom nickname only */}
-              <label className="flex flex-col">
-                <span className="ml-2">
-                  Custom nickname{" "}
-                  <span className="text-sm text-gray-500">(optional)</span>
-                </span>
-                <input
-                  type="text"
-                  value={customNick}
-                  onChange={(e) => setCustomNick(e.target.value)}
-                  placeholder="Enter your nickname"
-                  className="mt-1 w-full rounded border px-2 py-1"
-                />
-              </label>
-
-              <div className="mt-4">
-                {step == 2 && (
-                  <Button onClick={submitNickname} variant="primary">
-                    Continue
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
       )}
 
       {step === 3 && (
