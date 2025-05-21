@@ -7,6 +7,7 @@ import {
 import { usePrivy, type LinkedAccountWithMetadata } from "@privy-io/react-auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Button } from "../components/button";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -144,9 +145,9 @@ export default function Index() {
                 : "Unknown account"}
             </p>
           ) : (
-            <button onClick={login} className="btn">
+            <Button onClick={login} variant="secondary">
               Log in to Privy
-            </button>
+            </Button>
           )}
 
           {authenticated && user && (
@@ -168,9 +169,9 @@ export default function Index() {
 
               <div className="mt-4">
                 {step == 2 && (
-                  <button onClick={submitNickname} className="btn-primary">
+                  <Button onClick={submitNickname} variant="primary">
                     Continue
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -190,12 +191,12 @@ export default function Index() {
             placeholder="What did they do for you?"
           />
           <div className="mt-4 space-x-2">
-            <button onClick={submitAttestation} className="btn-primary">
+            <Button onClick={submitAttestation} variant="primary">
               Submit Vouch
-            </button>
-            <button onClick={() => setStep(1)} className="btn-secondary">
+            </Button>
+            <Button onClick={() => setStep(1)} variant="secondary">
               Start Over
-            </button>
+            </Button>
           </div>
         </div>
       )}
