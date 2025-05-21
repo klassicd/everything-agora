@@ -15,7 +15,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const base = "px-4 py-2 rounded focus:outline-none focus:ring";
+  const base = "px-4 py-2 rounded focus:outline-none cursor-pointer focus:ring";
   return (
     <button
       className={`${base} ${VARIANT_CLASSES[variant]} ${className}`}
