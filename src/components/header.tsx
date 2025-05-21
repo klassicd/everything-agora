@@ -9,7 +9,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 const navigation = [
-  { name: "Attest", to: "/" },
+  { name: "Vouch", to: "/" },
   { name: "Leaderboard", to: "/leaderboard" },
   { name: "Profile", to: "/profile" },
 ];
