@@ -2,6 +2,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { sepolia } from "viem/chains";
 import "./index.css";
 
@@ -17,6 +18,9 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+// Create a client
+const queryClient = new QueryClient();
 
 // Render the app
 const rootElement = document.getElementById("root")!;
@@ -36,12 +40,14 @@ if (!rootElement.innerHTML) {
             "passkey",
             "wallet", // will include embedded & external wallets
           ],
-          // only allow Ethereum
+          // only allow Sepolia
           supportedChains: [sepolia],
           defaultChain: sepolia,
         }}
       >
-        <RouterProvider router={router} />
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
       </PrivyProvider>
     </StrictMode>,
   );
