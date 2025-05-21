@@ -10,6 +10,7 @@ import {
   useWallets,
   type LinkedAccountWithMetadata,
 } from "@privy-io/react-auth";
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
@@ -51,7 +52,7 @@ export default function Index() {
   const [step, setStep] = useState(1);
   const [options, setOptions] = useState<User[]>([]);
   const [query, setQuery] = useState("");
-  const [selectedSeller, setSelectedSeller] = useState<User | null>(null); // Renamed from selected
+  const [selectedSeller, setSelectedSeller] = useState<User | null>(null);
   const [reviewText, setReviewText] = useState("");
 
   // State for nickname input and confirmed nickname
@@ -150,6 +151,55 @@ export default function Index() {
     })();
   }, [debouncedQuery, step, getAccessToken, baseUrl, authenticated]);
 
+  // Mutation function for submitting attestation
+  const attestMutationFn = async (data: {
+    attestationPayload: {
+      signer: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sig: any;
+    };
+    reviewText: string;
+    token: string | null;
+  }) => {
+    const response = await fetch(`${baseUrl}/attestations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${data.token}`,
+      },
+      body: JSON.stringify({
+        attestation: data.attestationPayload,
+        reviewText: data.reviewText,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const error = new Error(
+        errorData.error || "Failed to submit attestation via API.",
+      );
+      console.error("Attestation submission failed:", error);
+      throw error;
+    }
+    return response.json();
+  };
+
+  const attestationMutation = useMutation({
+    mutationFn: attestMutationFn,
+    onSuccess: () => {
+      alert("Vouch submitted!");
+      setReviewText("");
+      setSelectedSeller(null);
+      setQuery("");
+      setStep(1); // Or 2, depending on desired flow after submission
+    },
+    onError: (error: Error) => {
+      // TanStack Query handles the error state.
+      // The form state (reviewText, selectedSeller) remains as is.
+      console.error("Attestation submission failed:", error);
+    },
+  });
+
   const submitAttestation = async () => {
     if (
       !selectedSeller ||
@@ -159,8 +209,8 @@ export default function Index() {
     ) {
       return;
     }
+    // attestationMutation.reset(); // Optional: Clears previous error/data state from mutation
 
-    // Ensure user.wallet is available (Privy's way to access the active wallet)
     if (!user.wallet) {
       console.error("User wallet not connected or available.");
       alert("Wallet not connected. Please ensure your wallet is active.");
@@ -168,48 +218,47 @@ export default function Index() {
     }
 
     const token = await getAccessToken();
+    if (!token) {
+      console.error("Failed to get access token for attestation.");
+      alert(
+        "Authentication error. Could not retrieve token. Please try again.",
+      );
+      return;
+    }
+
     const linkedAccount = user.linkedAccounts?.find(isWalletAccount);
     if (!linkedAccount) {
       console.error("No linked wallet account found.");
-      return;
-    }
-    const buyerAddress = linkedAccount.address;
-    if (!buyerAddress) {
-      console.error("Buyer address not found.");
+      alert("No linked wallet account found. Please check your Privy setup.");
       return;
     }
 
     try {
       // Get the EIP-1193 provider from Privy's user.wallet
-      // It's generally better to use user.wallet for the active wallet
-      if (!user.wallet) {
-        console.error("User wallet not available.");
-        alert("Wallet not available. Please ensure your wallet is active.");
+      const wallet = wallets[0]; // Assuming the first wallet is the one to use
+      if (!wallet) {
+        console.error("No wallet found in Privy wallets array.");
+        alert(
+          "Wallet not found. Please ensure your wallet is properly connected.",
+        );
         return;
       }
-      const wallet = wallets[0];
       const eip1193Provider = await wallet.getEthereumProvider();
-
-      // Wrap it with ethers.js BrowserProvider for ethers v6
       const ethersProvider = new ethers.BrowserProvider(eip1193Provider);
-
-      // Get the signer, which is required for write operations like attest (getSigner is async in ethers v6)
       const signer = await ethersProvider.getSigner();
-
-      // Connect EAS with the ethers.js signer
       await eas.connect(signer);
 
       const schemaEncoder = new SchemaEncoder("string reviewText");
       const encodedData = schemaEncoder.encodeData([
-        { name: "reviewText", value: reviewText.trim(), type: "string" }, // Use the actual reviewText
+        { name: "reviewText", value: reviewText.trim(), type: "string" },
       ]);
 
       const offchain = await eas.getOffchain();
       const offchainAttestation = await offchain.signOffchainAttestation(
         {
           recipient: selectedSeller.address,
-          expirationTime: 0n, // 0n for no expiration
-          time: BigInt(Math.floor(Date.now() / 1000)), // Unix timestamp of current time
+          expirationTime: 0n,
+          time: BigInt(Math.floor(Date.now() / 1000)),
           revocable: false,
           schema: schemaUID,
           refUID:
@@ -219,7 +268,6 @@ export default function Index() {
         signer,
       );
 
-      // Create a serializable version of the offchainAttestation
       const serializableAttestation = {
         ...offchainAttestation,
         message: {
@@ -233,29 +281,22 @@ export default function Index() {
         },
       };
 
-      await fetch(`${baseUrl}/attestations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      attestationMutation.mutate({
+        attestationPayload: {
+          signer: signer.address,
+          sig: serializableAttestation,
         },
-        body: JSON.stringify({
-          attestation: {
-            signer: signer.address,
-            sig: serializableAttestation, // Use the serializable version
-          },
-          reviewText,
-        }),
+        reviewText: reviewText.trim(),
+        token: token,
       });
-      // TODO: handle success / reset form
-      alert("Vouch submitted!"); // Placeholder for success
-      setReviewText("");
-      setSelectedSeller(null);
-      setQuery("");
-      setStep(1); // Or 2, depending on desired flow after submission
     } catch (error) {
-      console.error("Error submitting attestation:", error);
-      alert("Error submitting attestation. See console for details.");
+      console.error("Error preparing attestation data:", error);
+      // This error is for issues before calling the mutation (e.g., EAS SDK errors)
+      // TanStack Query's error state won't be set for these.
+      // You might want to display this differently or use a local state.
+      alert(
+        `Error during attestation preparation: ${error instanceof Error ? error.message : "Unknown error"}. See console for details.`,
+      );
     }
   };
 
@@ -426,20 +467,31 @@ export default function Index() {
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="What did they do for you?"
               />
+              {attestationMutation.isError && (
+                <div className="mt-2 rounded border border-red-400 bg-red-100 p-2 text-sm text-red-700">
+                  <p>
+                    {(attestationMutation.error as Error)?.message ||
+                      "An error occurred."}
+                  </p>
+                </div>
+              )}
               <div className="mt-4 space-x-2">
                 <Button
                   onClick={submitAttestation}
                   variant="primary"
-                  disabled={!canSubmitVouch}
+                  disabled={!canSubmitVouch || attestationMutation.isPending}
                 >
-                  Submit Vouch
+                  {attestationMutation.isPending
+                    ? "Submitting..."
+                    : "Submit Vouch"}
                 </Button>
                 <Button
                   onClick={() => {
-                    setStep(1); // This will trigger the useEffect to check nickname and potentially go to step 2
-                    setSelectedSeller(null); // Clear selected seller
-                    setReviewText(""); // Clear review text
-                    setQuery(""); // Clear search query
+                    setStep(1);
+                    setSelectedSeller(null);
+                    setReviewText("");
+                    setQuery("");
+                    attestationMutation.reset(); // Reset mutation state if starting over
                   }}
                   variant="secondary"
                 >
