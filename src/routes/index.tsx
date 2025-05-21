@@ -29,9 +29,8 @@ export default function Index() {
   const [selected, setSelected] = useState<User | null>(null);
   const [reviewText, setReviewText] = useState("");
   const [customNick, setCustomNick] = useState("");
-
   const { authenticated, user, login, getAccessToken } = usePrivy();
-  // console.log(user);
+  const baseUrl = import.meta.env.VITE_API_URL; // Use environment variable for base URL
 
   // Step 1: Search sellers
   useEffect(() => {
@@ -39,9 +38,8 @@ export default function Index() {
     (async () => {
       try {
         const token = await getAccessToken();
-        const baseUrl = import.meta.env.VITE_API_URL; // Use environment variable for base URL
         const res = await fetch(
-          `${baseUrl}/users?q=${encodeURIComponent(query)}`,
+          `${baseUrl}/users?search=${encodeURIComponent(query)}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -53,7 +51,7 @@ export default function Index() {
         setOptions([]);
       }
     })();
-  }, [query, step, getAccessToken]);
+  }, [query, step, getAccessToken, baseUrl]);
 
   const submitAttestation = async () => {
     if (!selected || !user) return;
@@ -78,20 +76,15 @@ export default function Index() {
   };
 
   const submitNickname = async () => {
-    if (!user) return;
-    // const signature = await signMessage({
-    //   message: `Set nickname:${customNick}`,
-    // });
-    // const token = await getAccessToken();
-    // await fetch("/nickname", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${token}`,
-    //   },
-    //   body: JSON.stringify({ nickname: customNick, signature }),
-    // });
-    // TODO: confirm nickname set
+    const token = await getAccessToken();
+    await fetch(`${baseUrl}/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ nickname: customNick }),
+    });
     setStep(3);
   };
 
@@ -114,15 +107,19 @@ export default function Index() {
               placeholder="Search by nickname..."
             />
             <ComboboxOptions className="mt-1 max-h-60 overflow-auto rounded border">
-              {options.map((opt) => (
-                <ComboboxOption
-                  key={opt.address}
-                  value={opt}
-                  className="cursor-pointer px-2 py-1 hover:bg-gray-100"
-                >
-                  {opt.nickname}
-                </ComboboxOption>
-              ))}
+              {options.length > 0 ? (
+                options.map((opt) => (
+                  <ComboboxOption
+                    key={opt.address}
+                    value={opt}
+                    className="cursor-pointer px-2 py-1 hover:bg-gray-100"
+                  >
+                    {opt.nickname}
+                  </ComboboxOption>
+                ))
+              ) : (
+                <div className="px-2 py-1 text-gray-500">No results found</div>
+              )}
             </ComboboxOptions>
           </Combobox>
         </>
