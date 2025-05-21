@@ -122,7 +122,7 @@ export default function Index() {
       {step >= 1 && (
         <div className="pt-4">
           <h2 className="mb-4 text-xl font-semibold">
-            Join & Vouch For Your Community
+            Vouch For Your Community
           </h2>
 
           {authenticated && user ? (
@@ -140,7 +140,7 @@ export default function Index() {
             </>
           ) : (
             <Button onClick={login} variant="primary">
-              Log in to Privy
+              Join with Privy
             </Button>
           )}
 
