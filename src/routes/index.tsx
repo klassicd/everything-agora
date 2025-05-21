@@ -1,13 +1,24 @@
+import { EAS, SchemaEncoder } from "@ethereum-attestation-service/eas-sdk";
 import {
   Combobox,
   ComboboxInput,
   ComboboxOption,
   ComboboxOptions,
 } from "@headlessui/react";
-import { usePrivy, type LinkedAccountWithMetadata } from "@privy-io/react-auth";
-import { createFileRoute, Link } from "@tanstack/react-router"; // Import Link
+import {
+  usePrivy,
+  useWallets,
+  type LinkedAccountWithMetadata,
+} from "@privy-io/react-auth";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { Button } from "../components/button";
+
+const easContractAddress = import.meta.env.VITE_EAS_CONTRACT_ADDRESS;
+const schemaUID = import.meta.env.VITE_REVIEW_SCHEMA_UID;
+
+const eas = new EAS(easContractAddress);
 
 // Helper hook for debouncing
 function useDebounce<T>(value: T, delay: number): T {
@@ -50,6 +61,7 @@ export default function Index() {
   >(null); // Nickname from API
 
   const { authenticated, user, login, getAccessToken } = usePrivy();
+  const { wallets } = useWallets();
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const debouncedQuery = useDebounce(query, 300);
@@ -144,32 +156,107 @@ export default function Index() {
       !user ||
       !reviewText.trim() ||
       !confirmedUserNickname
-    )
-      return; // Guard clause
-    const token = await getAccessToken();
-    const linkedAccount = user.linkedAccounts?.find(isWalletAccount); // Ensure it's a wallet
-    if (!linkedAccount || !isWalletAccount(linkedAccount)) return; // Check if it's a wallet account
-    const buyerAddress = linkedAccount.address;
-    if (!buyerAddress) return;
+    ) {
+      return;
+    }
 
-    await fetch(`${baseUrl}/attestations`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        sellerAddress: selectedSeller.address,
-        buyerAddress,
-        reviewText,
-      }),
-    });
-    // TODO: handle success / reset form
-    alert("Vouch submitted!"); // Placeholder for success
-    setReviewText("");
-    setSelectedSeller(null);
-    setQuery("");
-    setStep(1); // Or 2, depending on desired flow after submission
+    // Ensure user.wallet is available (Privy's way to access the active wallet)
+    if (!user.wallet) {
+      console.error("User wallet not connected or available.");
+      alert("Wallet not connected. Please ensure your wallet is active.");
+      return;
+    }
+
+    const token = await getAccessToken();
+    const linkedAccount = user.linkedAccounts?.find(isWalletAccount);
+    if (!linkedAccount) {
+      console.error("No linked wallet account found.");
+      return;
+    }
+    const buyerAddress = linkedAccount.address;
+    if (!buyerAddress) {
+      console.error("Buyer address not found.");
+      return;
+    }
+
+    try {
+      // Get the EIP-1193 provider from Privy's user.wallet
+      // It's generally better to use user.wallet for the active wallet
+      if (!user.wallet) {
+        console.error("User wallet not available.");
+        alert("Wallet not available. Please ensure your wallet is active.");
+        return;
+      }
+      const wallet = wallets[0];
+      const eip1193Provider = await wallet.getEthereumProvider();
+
+      // Wrap it with ethers.js BrowserProvider for ethers v6
+      const ethersProvider = new ethers.BrowserProvider(eip1193Provider);
+
+      // Get the signer, which is required for write operations like attest (getSigner is async in ethers v6)
+      const signer = await ethersProvider.getSigner();
+
+      // Connect EAS with the ethers.js signer
+      await eas.connect(signer);
+
+      const schemaEncoder = new SchemaEncoder("string reviewText");
+      const encodedData = schemaEncoder.encodeData([
+        { name: "reviewText", value: reviewText.trim(), type: "string" }, // Use the actual reviewText
+      ]);
+
+      const offchain = await eas.getOffchain();
+      const offchainAttestation = await offchain.signOffchainAttestation(
+        {
+          recipient: selectedSeller.address,
+          expirationTime: 0n, // 0n for no expiration
+          time: BigInt(Math.floor(Date.now() / 1000)), // Unix timestamp of current time
+          revocable: false,
+          schema: schemaUID,
+          refUID:
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+          data: encodedData,
+        },
+        signer,
+      );
+
+      // Create a serializable version of the offchainAttestation
+      const serializableAttestation = {
+        ...offchainAttestation,
+        message: {
+          ...offchainAttestation.message,
+          time: Number(offchainAttestation.message.time),
+          expirationTime: Number(offchainAttestation.message.expirationTime),
+        },
+        domain: {
+          ...offchainAttestation.domain,
+          chainId: Number(offchainAttestation.domain.chainId),
+        },
+      };
+
+      await fetch(`${baseUrl}/attestations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          attestation: {
+            signer: signer.address,
+            sig: serializableAttestation, // Use the serializable version
+          },
+          reviewText,
+        }),
+      });
+      // TODO: handle success / reset form
+      alert("Vouch submitted!"); // Placeholder for success
+      setReviewText("");
+      setSelectedSeller(null);
+      setQuery("");
+      setStep(1); // Or 2, depending on desired flow after submission
+    } catch (error) {
+      console.error("Error submitting attestation:", error);
+      alert("Error submitting attestation. See console for details.");
+    }
   };
 
   const submitNickname = async () => {
