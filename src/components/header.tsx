@@ -1,8 +1,8 @@
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import {
-  ArrowRightEndOnRectangleIcon,
   ArrowLeftEndOnRectangleIcon,
+  ArrowRightEndOnRectangleIcon,
 } from "@heroicons/react/24/solid";
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
