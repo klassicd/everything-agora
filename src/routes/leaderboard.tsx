@@ -78,8 +78,8 @@ function Leaderboard() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-4">
-      <h2 className="mb-6 text-center text-2xl font-semibold">Leaderboard</h2>
+    <div className="mx-auto max-w-lg p-4">
+      <h2 className="mb-6 text-2xl font-semibold text-left">Leaderboard</h2>
       {leaderboardData && leaderboardData.length === 0 ? (
         <p className="text-center text-gray-500">
           The leaderboard is currently empty.

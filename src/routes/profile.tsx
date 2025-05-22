@@ -63,8 +63,8 @@ function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-md p-4">
-      <h2 className="mb-6 text-2xl font-semibold">Profile</h2>
+    <div className="mx-auto max-w-lg p-4">
+      <h2 className="mb-6 text-left text-2xl font-semibold">Profile</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <InputField
           label="Your Nickname"

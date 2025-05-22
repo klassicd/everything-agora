@@ -331,8 +331,10 @@ export default function Index() {
   return (
     <div className="mx-auto max-w-md p-4">
       {/* This section is always evaluated first */}
-      <div className="pt-4">
-        <h2 className="mb-4 text-xl font-semibold">Vouch For Your Community</h2>
+      <div>
+        <h2 className="mb-6 text-left text-2xl font-semibold">
+          Vouch For Your Community
+        </h2>
 
         {authenticated && user ? (
           <>
@@ -408,7 +410,9 @@ export default function Index() {
             <div className="pt-4">
               {" "}
               {/* Added pt-4 for spacing */}
-              <h2 className="mb-4 text-xl font-semibold">Who helped you?</h2>
+              <h2 className="mb-4 text-left text-xl font-semibold">
+                Who helped you?
+              </h2>
               <Combobox
                 value={selectedSeller}
                 onChange={(opt: User | null) => {
@@ -449,7 +453,7 @@ export default function Index() {
           {/* Step 3: Leave a Review (Requires confirmed nickname and selected seller) */}
           {step === 3 && selectedSeller && confirmedUserNickname && (
             <div className="pt-4">
-              <h2 className="mb-4 text-xl font-semibold">
+              <h2 className="mb-4 text-left text-xl font-semibold">
                 Leave a Review for {selectedSeller.nickname}
               </h2>
               <textarea
