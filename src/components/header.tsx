@@ -4,19 +4,39 @@ import {
   ArrowLeftEndOnRectangleIcon,
   ArrowRightEndOnRectangleIcon,
 } from "@heroicons/react/24/solid";
-import { usePrivy } from "@privy-io/react-auth";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { usePrivy, useWallets } from "@privy-io/react-auth"; // Import useWallets
+import { Link, type ToPathOption } from "@tanstack/react-router"; // Import ToPathOption for better typing if needed
+import { useMemo, useState } from "react"; // Import useMemo
 
-const navigation = [
+// Define a more specific type for navigation items
+interface NavigationItem {
+  name: string;
+  to: ToPathOption; // Use a general type that Link accepts for 'to'
+  params?: Record<string, string>; // Optional params
+}
+
+const baseNavigation: NavigationItem[] = [
   { name: "Vouch", to: "/" },
   { name: "Leaderboard", to: "/leaderboard" },
-  { name: "Profile", to: "/profile" },
 ];
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { login, logout, authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const currentUserAddress = wallets[0]?.address;
+
+  const navigation = useMemo(() => {
+    const navItems = [...baseNavigation];
+    if (authenticated && currentUserAddress) {
+      navItems.push({
+        name: "My Profile",
+        to: "/profile/$address",
+        params: { address: currentUserAddress },
+      });
+    }
+    return navItems;
+  }, [authenticated, currentUserAddress]);
 
   return (
     <header className="bg-white">
@@ -52,6 +72,7 @@ export default function Header() {
             <Link
               key={item.name}
               to={item.to}
+              params={item.params}
               className="text-sm/6 font-semibold text-gray-900"
             >
               {item.name}
@@ -87,7 +108,11 @@ export default function Header() {
         <div className="fixed inset-0 z-10" />
         <DialogPanel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
-            <Link to="/" className="-m-1.5 flex items-center p-1.5">
+            <Link
+              to="/"
+              className="-m-1.5 flex items-center p-1.5"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               <span className="sr-only">Everything Agora</span>
               <img
                 alt=""
@@ -114,6 +139,7 @@ export default function Header() {
                   <Link
                     key={item.name}
                     to={item.to}
+                    params={item.params}
                     className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -125,7 +151,6 @@ export default function Header() {
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-
                     if (authenticated) {
                       logout();
                     } else {

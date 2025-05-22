@@ -353,7 +353,7 @@ export default function Index() {
                     </span>
                     &nbsp; (
                     <Link
-                      to="/profile"
+                      to="/settings"
                       className="text-sm text-blue-600 hover:underline"
                     >
                       Edit

@@ -4,11 +4,11 @@ import { Button } from "../components/button"; // Adjust path as needed
 import { InputField } from "../components/input"; // Adjust path as needed
 import { useUser } from "../hooks/useUser"; // Adjust path as needed
 
-export const Route = createFileRoute("/profile")({
-  component: ProfilePage,
+export const Route = createFileRoute("/settings")({
+  component: SettingsPage,
 });
 
-function ProfilePage() {
+function SettingsPage() {
   const {
     user,
     nickname,

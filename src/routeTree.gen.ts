@@ -11,15 +11,16 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as ProfileImport } from './routes/profile'
+import { Route as SettingsImport } from './routes/settings'
 import { Route as LeaderboardImport } from './routes/leaderboard'
 import { Route as IndexImport } from './routes/index'
+import { Route as ProfileAddressImport } from './routes/profile.$address'
 
 // Create/Update Routes
 
-const ProfileRoute = ProfileImport.update({
-  id: '/profile',
-  path: '/profile',
+const SettingsRoute = SettingsImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -32,6 +33,12 @@ const LeaderboardRoute = LeaderboardImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProfileAddressRoute = ProfileAddressImport.update({
+  id: '/profile/$address',
+  path: '/profile/$address',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -53,11 +60,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeaderboardImport
       parentRoute: typeof rootRoute
     }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileImport
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
+    '/profile/$address': {
+      id: '/profile/$address'
+      path: '/profile/$address'
+      fullPath: '/profile/$address'
+      preLoaderRoute: typeof ProfileAddressImport
       parentRoute: typeof rootRoute
     }
   }
@@ -68,41 +82,46 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
-  '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
+  '/profile/$address': typeof ProfileAddressRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
-  '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
+  '/profile/$address': typeof ProfileAddressRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
-  '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
+  '/profile/$address': typeof ProfileAddressRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/leaderboard' | '/profile'
+  fullPaths: '/' | '/leaderboard' | '/settings' | '/profile/$address'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/leaderboard' | '/profile'
-  id: '__root__' | '/' | '/leaderboard' | '/profile'
+  to: '/' | '/leaderboard' | '/settings' | '/profile/$address'
+  id: '__root__' | '/' | '/leaderboard' | '/settings' | '/profile/$address'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LeaderboardRoute: typeof LeaderboardRoute
-  ProfileRoute: typeof ProfileRoute
+  SettingsRoute: typeof SettingsRoute
+  ProfileAddressRoute: typeof ProfileAddressRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LeaderboardRoute: LeaderboardRoute,
-  ProfileRoute: ProfileRoute,
+  SettingsRoute: SettingsRoute,
+  ProfileAddressRoute: ProfileAddressRoute,
 }
 
 export const routeTree = rootRoute
@@ -117,7 +136,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/leaderboard",
-        "/profile"
+        "/settings",
+        "/profile/$address"
       ]
     },
     "/": {
@@ -126,8 +146,11 @@ export const routeTree = rootRoute
     "/leaderboard": {
       "filePath": "leaderboard.tsx"
     },
-    "/profile": {
-      "filePath": "profile.tsx"
+    "/settings": {
+      "filePath": "settings.tsx"
+    },
+    "/profile/$address": {
+      "filePath": "profile.$address.tsx"
     }
   }
 }

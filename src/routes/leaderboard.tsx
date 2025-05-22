@@ -117,7 +117,8 @@ function Leaderboard() {
                   </td>
                   <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
                     <Link
-                      to="/profile"
+                      to="/profile/$address"
+                      params={{ address: entry.address }}
                       className="text-blue-600 hover:underline"
                     >
                       {entry.nickname}
