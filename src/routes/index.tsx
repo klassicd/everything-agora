@@ -408,9 +408,7 @@ export default function Index() {
             <div className="pt-4">
               {" "}
               {/* Added pt-4 for spacing */}
-              <h2 className="mb-4 text-xl font-semibold">
-                Vouch: Who helped you?
-              </h2>
+              <h2 className="mb-4 text-xl font-semibold">Who helped you?</h2>
               <Combobox
                 value={selectedSeller}
                 onChange={(opt: User | null) => {
