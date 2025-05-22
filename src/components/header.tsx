@@ -47,7 +47,7 @@ export default function Header() {
             <span className="sr-only">Everything Agora</span>
             <img
               alt=""
-              src="/images/eth-glyph-colored.png"
+              src="/images/everything-agora-logo.png"
               className="h-8 w-auto"
             />
             <span className="ml-2 hidden text-2xl font-semibold text-gray-900 lg:inline-block">
@@ -114,7 +114,7 @@ export default function Header() {
               <span className="sr-only">Everything Agora</span>
               <img
                 alt=""
-                src="/images/eth-glyph-colored.png"
+                src="/images/everything agora logo.png"
                 className="h-8 w-auto"
               />
               <span className="ml-2 text-2xl font-semibold text-gray-900">
