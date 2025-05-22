@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Button } from "../components/button"; // Adjust path as needed
-import { InputField } from "../components/input"; // Adjust path as needed
-import { useUser } from "../hooks/useUser"; // Adjust path as needed
+import { Button } from "../components/button";
+import { InputField } from "../components/input";
+import { useUser } from "../hooks/useUser";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -13,15 +13,13 @@ function SettingsPage() {
     user,
     nickname,
     updateNickname,
-    // isLoadingNickname, // This is for fetching
-    isUpdatingNickname, // Use this for the mutation status
-    nicknameError, // This could be fetch error or update error depending on your hook logic
-    // updateNicknameError, // Or use this specifically for form submission error
+    isUpdatingNickname,
+    nicknameError,
     authenticated,
   } = useUser();
   const [currentNicknameInput, setCurrentNicknameInput] = useState("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null); // Specific for form submission
+  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,8 +46,6 @@ function SettingsPage() {
       setSuccessMessage("Nickname updated successfully!");
     } else {
       // nicknameError from useUser might contain the update error
-      // Or if you exposed updateNicknameError separately:
-      // setFormError(updateNicknameError?.message || "Failed to update nickname.");
       setFormError(nicknameError?.message || "Failed to update nickname.");
     }
   };
@@ -73,21 +69,17 @@ function SettingsPage() {
           value={currentNicknameInput}
           onChange={(e) => setCurrentNicknameInput(e.target.value)}
           placeholder="Enter your nickname"
-          disabled={isUpdatingNickname} // Use isUpdatingNickname
+          disabled={isUpdatingNickname}
           error={formError || nicknameError?.message} // Display formError first, then general error
         />
         {successMessage && (
           <p className="text-sm text-green-600">{successMessage}</p>
         )}
-        {/* Display general nicknameError if not specific to form and not already shown by InputField */}
-        {/* {!formError && nicknameError && !InputField shows it && (
-          <p className="mt-1 text-sm text-red-600">{nicknameError.message}</p>
-        )} */}
         <Button
           type="submit"
           variant="primary"
           disabled={
-            isUpdatingNickname || // Use isUpdatingNickname
+            isUpdatingNickname ||
             currentNicknameInput.trim() === (nickname || "")
           }
         >
