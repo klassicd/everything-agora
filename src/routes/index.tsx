@@ -11,10 +11,15 @@ import {
   type LinkedAccountWithMetadata,
 } from "@privy-io/react-auth";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
+import { AlertBox } from "../components/alertbox";
 import { Button } from "../components/button";
+import {
+  Notification,
+  NotificationContainer,
+} from "../components/notification";
 
 const easContractAddress = import.meta.env.VITE_EAS_CONTRACT_ADDRESS;
 const schemaUID = import.meta.env.VITE_REVIEW_SCHEMA_UID;
@@ -44,6 +49,15 @@ interface User {
   address: string;
 }
 
+interface AppNotificationStateItem {
+  id: string;
+  show: boolean;
+  title: string;
+  message: string;
+  type: "success" | "error" | "warning";
+  autoDismiss?: number;
+}
+
 function isWalletAccount(account: LinkedAccountWithMetadata) {
   return "address" in account;
 }
@@ -60,12 +74,44 @@ export default function Index() {
   const [confirmedUserNickname, setConfirmedUserNickname] = useState<
     string | null
   >(null); // Nickname from API
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
+
+  const [notifications, setNotifications] = useState<
+    AppNotificationStateItem[]
+  >([]);
+  const navigate = useNavigate();
 
   const { authenticated, user, login, getAccessToken } = usePrivy();
   const { wallets } = useWallets();
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const debouncedQuery = useDebounce(query, 300);
+
+  const addNotification = (
+    details: Omit<AppNotificationStateItem, "id" | "show">,
+  ) => {
+    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    setNotifications((prev) => [...prev, { ...details, id, show: true }]);
+  };
+
+  const dismissNotification = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, show: false } : n)),
+    );
+  };
+
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+    notifications.forEach((n) => {
+      if (!n.show) {
+        const timer = setTimeout(() => {
+          setNotifications((prev) => prev.filter((notif) => notif.id !== n.id));
+        }, 500); // Cleanup after animation (Notification leave is 100ms)
+        timers.push(timer);
+      }
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [notifications]);
 
   // Effect to reset state on logout
   useEffect(() => {
@@ -77,6 +123,7 @@ export default function Index() {
       setReviewText("");
       setQuery("");
       setOptions([]);
+      setNicknameError(null);
     }
   }, [authenticated]);
 
@@ -104,6 +151,7 @@ export default function Index() {
           if (data.nickname) {
             setConfirmedUserNickname(data.nickname);
             setCurrentUserNicknameInput(data.nickname); // Pre-fill input state as well
+            setNicknameError(null); // Clear any previous nickname errors
             // If user is on step 1 (e.g. initial load, or after "Start Over")
             // and has a nickname, automatically move to step 2.
             if (step === 1) {
@@ -116,10 +164,13 @@ export default function Index() {
         } else {
           console.error("Failed to fetch nickname, status:", res.status);
           setConfirmedUserNickname(null);
+          // Optionally, show a notification for fetch failure if it's critical
+          // addNotification({ title: "Error", message: "Could not fetch your nickname.", type: 'error' });
         }
       } catch (error) {
         console.error("Failed to fetch nickname:", error);
         setConfirmedUserNickname(null);
+        // addNotification({ title: "Error", message: "An error occurred while fetching your nickname.", type: 'error' });
       }
     };
 
@@ -174,7 +225,9 @@ export default function Index() {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Failed to submit attestation via API." }));
       const error = new Error(
         errorData.error || "Failed to submit attestation via API.",
       );
@@ -187,15 +240,24 @@ export default function Index() {
   const attestationMutation = useMutation({
     mutationFn: attestMutationFn,
     onSuccess: () => {
-      alert("Vouch submitted!");
+      addNotification({
+        title: "Vouch Submitted!",
+        message: "Your vouch has been successfully submitted.",
+        type: "success",
+        autoDismiss: 5000,
+      });
       setReviewText("");
       setSelectedSeller(null);
       setQuery("");
-      setStep(1); // Or 2, depending on desired flow after submission
+      setStep(1); // Reset step for current page
+      // Redirect to profile page - replace '/profile' with your actual profile route
+      navigate({
+        to: "/profile/$address",
+        params: { address: selectedSeller ? selectedSeller.address : "" },
+      });
     },
     onError: (error: Error) => {
-      // TanStack Query handles the error state.
-      // The form state (reviewText, selectedSeller) remains as is.
+      // Error is handled by the inline AlertBox below the textarea
       console.error("Attestation submission failed:", error);
     },
   });
@@ -213,23 +275,34 @@ export default function Index() {
 
     if (!user.wallet) {
       console.error("User wallet not connected or available.");
-      alert("Wallet not connected. Please ensure your wallet is active.");
+      addNotification({
+        title: "Wallet Error",
+        message: "Wallet not connected. Please ensure your wallet is active.",
+        type: "error",
+      });
       return;
     }
 
     const token = await getAccessToken();
     if (!token) {
       console.error("Failed to get access token for attestation.");
-      alert(
-        "Authentication error. Could not retrieve token. Please try again.",
-      );
+      addNotification({
+        title: "Authentication Error",
+        message: "Could not retrieve token. Please try again.",
+        type: "error",
+      });
       return;
     }
 
     const linkedAccount = user.linkedAccounts?.find(isWalletAccount);
     if (!linkedAccount) {
       console.error("No linked wallet account found.");
-      alert("No linked wallet account found. Please check your Privy setup.");
+      addNotification({
+        title: "Wallet Setup Error",
+        message:
+          "No linked wallet account found. Please check your Privy setup.",
+        type: "error",
+      });
       return;
     }
 
@@ -238,9 +311,12 @@ export default function Index() {
       const wallet = wallets[0]; // Assuming the first wallet is the one to use
       if (!wallet) {
         console.error("No wallet found in Privy wallets array.");
-        alert(
-          "Wallet not found. Please ensure your wallet is properly connected.",
-        );
+        addNotification({
+          title: "Wallet Not Found",
+          message:
+            "Wallet not found. Please ensure your wallet is properly connected.",
+          type: "error",
+        });
         return;
       }
       const eip1193Provider = await wallet.getEthereumProvider();
@@ -291,17 +367,22 @@ export default function Index() {
       });
     } catch (error) {
       console.error("Error preparing attestation data:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       // This error is for issues before calling the mutation (e.g., EAS SDK errors)
       // TanStack Query's error state won't be set for these.
       // You might want to display this differently or use a local state.
-      alert(
-        `Error during attestation preparation: ${error instanceof Error ? error.message : "Unknown error"}. See console for details.`,
-      );
+      addNotification({
+        title: "Attestation Preparation Error",
+        message: `Error: ${errorMessage}. See console for details.`,
+        type: "error",
+      });
     }
   };
 
   const submitNickname = async () => {
     if (!currentUserNicknameInput.trim()) return;
+    setNicknameError(null); // Clear previous errors
     const token = await getAccessToken();
     try {
       const response = await fetch(`${baseUrl}/users/me`, {
@@ -314,14 +395,27 @@ export default function Index() {
       });
       if (response.ok) {
         setConfirmedUserNickname(currentUserNicknameInput.trim());
+        addNotification({
+          title: "Nickname Set!",
+          message: "Your nickname has been updated.",
+          type: "success",
+        });
         setStep(2); // Move to seller selection step
       } else {
         // TODO: Handle nickname submission error
-        alert("Failed to set nickname.");
+        const errorData = await response.json().catch(() => ({})); // Ensure errorData is an object
+        const message =
+          errorData.message || "Failed to set nickname. Please try again.";
+        setNicknameError(message);
+        console.error("Failed to set nickname:", message, errorData);
       }
     } catch (error) {
       console.error("Error submitting nickname:", error);
-      alert("Error submitting nickname.");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
+      setNicknameError(`Error submitting nickname: ${message}`);
     }
   };
 
@@ -329,176 +423,204 @@ export default function Index() {
     !!selectedSeller && !!reviewText.trim() && !!confirmedUserNickname;
 
   return (
-    <div className="mx-auto max-w-md p-4">
-      {/* This section is always evaluated first */}
-      <div>
-        <h2 className="mb-6 text-left text-2xl font-semibold">
-          Vouch For Your Community
-        </h2>
+    <>
+      <NotificationContainer>
+        {notifications.map((n) => (
+          <Notification
+            key={n.id}
+            id={n.id}
+            show={n.show}
+            title={n.title}
+            message={n.message}
+            type={n.type}
+            onDismissRequest={dismissNotification}
+            autoDismiss={n.autoDismiss}
+          />
+        ))}
+      </NotificationContainer>
+      <div className="mx-auto max-w-md p-4">
+        {/* This section is always evaluated first */}
+        <div>
+          <h2 className="mb-6 text-left text-2xl font-semibold">
+            Vouch For Your Community
+          </h2>
 
-        {authenticated && user ? (
-          <>
-            <p className="mb-4 text-gray-700">
-              Optionally pick a nickname to help recognize those who give their
-              time, and be recognized yourself. A nickname is required to vouch.
-            </p>
-            {/* Nickname Display or Input Section */}
-            <div className="mt-4 space-y-4">
-              {confirmedUserNickname ? (
-                <div>
-                  <p className="mb-1">
-                    Your Nickname:{" "}
-                    <span className="font-semibold">
-                      {confirmedUserNickname}
-                    </span>
-                    &nbsp; (
-                    <Link
-                      to="/settings"
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      Edit
-                    </Link>
-                    )
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <label className="flex flex-col">
-                    <span className="ml-2">
-                      Set Your Nickname{" "}
-                      <span className="text-sm text-gray-500">
-                        (required to vouch)
+          {authenticated && user ? (
+            <>
+              <p className="mb-4 text-gray-700">
+                Optionally pick a nickname to help recognize those who give
+                their time, and be recognized yourself. A nickname is required
+                to vouch.
+              </p>
+              {/* Nickname Display or Input Section */}
+              <div className="mt-4 space-y-4">
+                {confirmedUserNickname ? (
+                  <div>
+                    <p className="mb-1">
+                      Your Nickname:{" "}
+                      <span className="font-semibold">
+                        {confirmedUserNickname}
                       </span>
-                    </span>
-                    <input
-                      type="text"
-                      value={currentUserNicknameInput}
-                      onChange={(e) =>
-                        setCurrentUserNicknameInput(e.target.value)
-                      }
-                      placeholder="Enter your nickname"
-                      className="mt-1 w-full rounded border px-2 py-1"
-                    />
-                  </label>
-                  {currentUserNicknameInput.trim() && (
-                    <div className="mt-2">
-                      <Button
-                        onClick={submitNickname}
-                        variant="primary"
-                        disabled={!currentUserNicknameInput.trim()}
+                      &nbsp; (
+                      <Link
+                        to="/settings"
+                        className="text-sm text-blue-600 hover:underline"
                       >
-                        Set Nickname & Continue
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                        Edit
+                      </Link>
+                      )
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <label className="flex flex-col">
+                      <span className="ml-2">
+                        Set Your Nickname{" "}
+                        <span className="text-sm text-gray-500">
+                          (required to vouch)
+                        </span>
+                      </span>
+                      <input
+                        type="text"
+                        value={currentUserNicknameInput}
+                        onChange={(e) =>
+                          setCurrentUserNicknameInput(e.target.value)
+                        }
+                        placeholder="Enter your nickname"
+                        className="mt-1 w-full rounded border px-2 py-1"
+                      />
+                    </label>
+                    {nicknameError && (
+                      <AlertBox
+                        type="error"
+                        title="Nickname Error"
+                        messages={[nicknameError]}
+                        className="mt-2"
+                      />
+                    )}
+                    {currentUserNicknameInput.trim() && (
+                      <div className="mt-2">
+                        <Button
+                          onClick={submitNickname}
+                          variant="primary"
+                          disabled={!currentUserNicknameInput.trim()}
+                        >
+                          Set Nickname & Continue
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <Button onClick={login} variant="primary">
+              Join with Privy
+            </Button>
+          )}
+        </div>
+
+        {/* Step-dependent content, only shown if authenticated and nickname is set (or being set) */}
+        {authenticated && user && (
+          <>
+            {/* Step 2: Vouch - Who helped you? (Requires confirmed nickname) */}
+            {step === 2 && confirmedUserNickname && (
+              <div className="pt-4">
+                {" "}
+                {/* Added pt-4 for spacing */}
+                <h2 className="mb-4 text-left text-xl font-semibold">
+                  Who helped you?
+                </h2>
+                <Combobox
+                  value={selectedSeller}
+                  onChange={(opt: User | null) => {
+                    // Allow null for clearing
+                    setSelectedSeller(opt);
+                    if (opt) {
+                      setStep(3); // Move to review step only if a seller is selected
+                    }
+                  }}
+                >
+                  <ComboboxInput
+                    className="w-full rounded border px-2 py-1"
+                    onChange={(e) => setQuery(e.target.value)}
+                    displayValue={(opt: User) => opt?.nickname || ""}
+                    placeholder="Search by nickname..."
+                  />
+                  <ComboboxOptions className="mt-1 max-h-60 overflow-auto rounded border">
+                    {options.length > 0
+                      ? options.map((opt) => (
+                          <ComboboxOption
+                            key={opt.address}
+                            value={opt}
+                            className="cursor-pointer px-2 py-1 hover:bg-gray-100"
+                          >
+                            {opt.nickname} ({opt.address.substring(0, 6)}...)
+                          </ComboboxOption>
+                        ))
+                      : debouncedQuery.trim() && (
+                          <div className="px-2 py-1 text-gray-500">
+                            No results found
+                          </div>
+                        )}
+                  </ComboboxOptions>
+                </Combobox>
+              </div>
+            )}
+
+            {/* Step 3: Leave a Review (Requires confirmed nickname and selected seller) */}
+            {step === 3 && selectedSeller && confirmedUserNickname && (
+              <div className="pt-4">
+                <h2 className="mb-4 text-left text-xl font-semibold">
+                  Leave a Review for {selectedSeller.nickname}
+                </h2>
+                <textarea
+                  className="w-full rounded border p-2"
+                  rows={4}
+                  maxLength={280}
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="What did they do for you?"
+                />
+                {attestationMutation.isError && (
+                  <AlertBox
+                    type="error"
+                    title="Submission Error"
+                    messages={[
+                      (attestationMutation.error as Error)?.message ||
+                        "An error occurred.",
+                    ]}
+                    className="mt-2"
+                  />
+                )}
+                <div className="mt-4 space-x-2">
+                  <Button
+                    onClick={submitAttestation}
+                    variant="primary"
+                    disabled={!canSubmitVouch || attestationMutation.isPending}
+                  >
+                    {attestationMutation.isPending
+                      ? "Submitting..."
+                      : "Submit Vouch"}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setStep(1);
+                      setSelectedSeller(null);
+                      setReviewText("");
+                      setQuery("");
+                      attestationMutation.reset(); // Reset mutation state if starting over
+                    }}
+                    variant="secondary"
+                  >
+                    Start Over
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
-        ) : (
-          <Button onClick={login} variant="primary">
-            Join with Privy
-          </Button>
         )}
       </div>
-
-      {/* Step-dependent content, only shown if authenticated and nickname is set (or being set) */}
-      {authenticated && user && (
-        <>
-          {/* Step 2: Vouch - Who helped you? (Requires confirmed nickname) */}
-          {step === 2 && confirmedUserNickname && (
-            <div className="pt-4">
-              {" "}
-              {/* Added pt-4 for spacing */}
-              <h2 className="mb-4 text-left text-xl font-semibold">
-                Who helped you?
-              </h2>
-              <Combobox
-                value={selectedSeller}
-                onChange={(opt: User | null) => {
-                  // Allow null for clearing
-                  setSelectedSeller(opt);
-                  if (opt) {
-                    setStep(3); // Move to review step only if a seller is selected
-                  }
-                }}
-              >
-                <ComboboxInput
-                  className="w-full rounded border px-2 py-1"
-                  onChange={(e) => setQuery(e.target.value)}
-                  displayValue={(opt: User) => opt?.nickname || ""}
-                  placeholder="Search by nickname..."
-                />
-                <ComboboxOptions className="mt-1 max-h-60 overflow-auto rounded border">
-                  {options.length > 0
-                    ? options.map((opt) => (
-                        <ComboboxOption
-                          key={opt.address}
-                          value={opt}
-                          className="cursor-pointer px-2 py-1 hover:bg-gray-100"
-                        >
-                          {opt.nickname} ({opt.address.substring(0, 6)}...)
-                        </ComboboxOption>
-                      ))
-                    : debouncedQuery.trim() && (
-                        <div className="px-2 py-1 text-gray-500">
-                          No results found
-                        </div>
-                      )}
-                </ComboboxOptions>
-              </Combobox>
-            </div>
-          )}
-
-          {/* Step 3: Leave a Review (Requires confirmed nickname and selected seller) */}
-          {step === 3 && selectedSeller && confirmedUserNickname && (
-            <div className="pt-4">
-              <h2 className="mb-4 text-left text-xl font-semibold">
-                Leave a Review for {selectedSeller.nickname}
-              </h2>
-              <textarea
-                className="w-full rounded border p-2"
-                rows={4}
-                maxLength={280}
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                placeholder="What did they do for you?"
-              />
-              {attestationMutation.isError && (
-                <div className="mt-2 rounded border border-red-400 bg-red-100 p-2 text-sm text-red-700">
-                  <p>
-                    {(attestationMutation.error as Error)?.message ||
-                      "An error occurred."}
-                  </p>
-                </div>
-              )}
-              <div className="mt-4 space-x-2">
-                <Button
-                  onClick={submitAttestation}
-                  variant="primary"
-                  disabled={!canSubmitVouch || attestationMutation.isPending}
-                >
-                  {attestationMutation.isPending
-                    ? "Submitting..."
-                    : "Submit Vouch"}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setStep(1);
-                    setSelectedSeller(null);
-                    setReviewText("");
-                    setQuery("");
-                    attestationMutation.reset(); // Reset mutation state if starting over
-                  }}
-                  variant="secondary"
-                >
-                  Start Over
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+    </>
   );
 }
