@@ -110,6 +110,21 @@ function ProfilePage() {
     );
   }
 
+  // Show a short, sweet invite to set up a nickname if it's your own missing profile
+  if (isError && error?.message === "Profile not found." && isOwnProfile) {
+    return (
+      <div className="mx-auto max-w-lg p-6 text-center">
+        <p className="mb-4">
+          Hey there! You don’t have a profile yet. Pick a nickname so people can
+          vouch for you and see your stats.
+        </p>
+        <Link to="/settings" className="text-indigo-600 hover:underline">
+          Set up my profile
+        </Link>
+      </div>
+    );
+  }
+
   if (isError) {
     return (
       <div className="mx-auto max-w-lg p-4 text-center text-red-500">
