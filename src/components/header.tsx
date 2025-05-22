@@ -8,11 +8,10 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Link, type ToPathOption } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-// Define a more specific type for navigation items
 interface NavigationItem {
   name: string;
-  to: ToPathOption; // Use a general type that Link accepts for 'to'
-  params?: Record<string, string>; // Optional params
+  to: ToPathOption;
+  params?: Record<string, string>;
 }
 
 const baseNavigation: NavigationItem[] = [
