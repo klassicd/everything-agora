@@ -4,9 +4,9 @@ import {
   ArrowLeftEndOnRectangleIcon,
   ArrowRightEndOnRectangleIcon,
 } from "@heroicons/react/24/solid";
-import { usePrivy, useWallets } from "@privy-io/react-auth"; // Import useWallets
-import { Link, type ToPathOption } from "@tanstack/react-router"; // Import ToPathOption for better typing if needed
-import { useMemo, useState } from "react"; // Import useMemo
+import { usePrivy } from "@privy-io/react-auth";
+import { Link, type ToPathOption } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 
 // Define a more specific type for navigation items
 interface NavigationItem {
@@ -22,21 +22,20 @@ const baseNavigation: NavigationItem[] = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { login, logout, authenticated } = usePrivy();
-  const { wallets } = useWallets();
-  const currentUserAddress = wallets[0]?.address;
+  const { login, logout, authenticated, user } = usePrivy();
 
   const navigation = useMemo(() => {
     const navItems = [...baseNavigation];
-    if (authenticated && currentUserAddress) {
+    const currentAddress = user?.wallet?.address;
+    if (authenticated && currentAddress) {
       navItems.push({
         name: "My Profile",
         to: "/profile/$address",
-        params: { address: currentUserAddress },
+        params: { address: currentAddress },
       });
     }
     return navItems;
-  }, [authenticated, currentUserAddress]);
+  }, [authenticated, user]);
 
   return (
     <header className="bg-white">
