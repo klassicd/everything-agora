@@ -79,6 +79,7 @@ function ProfilePage() {
       return fetchProfileData(address, token);
     },
     enabled: authenticated && !!address,
+    retry: false,
   });
 
   const currentUserAddress = wallets[0]?.address;
