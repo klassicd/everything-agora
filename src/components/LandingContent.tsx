@@ -1,4 +1,4 @@
-import { Button } from "./button";
+import { Button } from "./Button";
 
 interface LandingContentProps {
   onLogin: () => void;
@@ -11,7 +11,6 @@ export function LandingContent({ onLogin }: LandingContentProps) {
         A space for peer-to-peer exchange of skills, services, support and
         recognition.
       </p>
-      {/* You can add more introductory text or elements here */}
       <Button onClick={onLogin} variant="primary">
         Join with Privy
       </Button>
