@@ -20,7 +20,7 @@ import { LandingContent } from "../components/LandingContent";
 import {
   Notification,
   NotificationContainer,
-} from "../components/notification";
+} from "../components/Notification";
 
 const easContractAddress = import.meta.env.VITE_EAS_CONTRACT_ADDRESS;
 const schemaUID = import.meta.env.VITE_REVIEW_SCHEMA_UID;
