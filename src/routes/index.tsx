@@ -448,11 +448,6 @@ export default function Index() {
 
           {authenticated && user ? (
             <>
-              <p className="mb-4 text-gray-700">
-                Optionally pick a nickname to help recognize those who give
-                their time, and be recognized yourself. A nickname is required
-                to vouch.
-              </p>
               {/* Nickname Display or Input Section */}
               <div className="mt-4 space-y-4">
                 {confirmedUserNickname ? (
@@ -474,6 +469,11 @@ export default function Index() {
                   </div>
                 ) : (
                   <>
+                    <p className="mb-4 text-gray-700">
+                      Pick a nickname to help recognize those who give their
+                      time, and be recognized yourself. A nickname is required
+                      to vouch.
+                    </p>
                     <label className="flex flex-col">
                       <span className="ml-2">
                         Set Your Nickname{" "}
