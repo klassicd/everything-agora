@@ -14,8 +14,8 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
-import { AlertBox } from "../components/alertbox";
-import { Button } from "../components/button";
+import { AlertBox } from "../components/AlertBox";
+import { Button } from "../components/Button";
 import { LandingContent } from "../components/LandingContent";
 import {
   Notification,

@@ -1,7 +1,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "../components/button";
+import { Button } from "../components/Button";
 
 const baseUrl = import.meta.env.VITE_API_URL;
 

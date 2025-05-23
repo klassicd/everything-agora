@@ -2,8 +2,8 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
-import { Button } from "../components/button"; // Assuming you have this
-import { PencilIcon } from "@heroicons/react/24/outline"; // Or solid, adjust as needed
+import { Button } from "../components/Button";
+import { PencilIcon } from "@heroicons/react/24/outline";
 
 const baseUrl = import.meta.env.VITE_API_URL;
 
