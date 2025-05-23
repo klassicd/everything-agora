@@ -16,6 +16,7 @@ import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { AlertBox } from "../components/alertbox";
 import { Button } from "../components/button";
+import { LandingContent } from "../components/LandingContent";
 import {
   Notification,
   NotificationContainer,
@@ -512,114 +513,109 @@ export default function Index() {
                   </>
                 )}
               </div>
+
+              {/* Step 2: Vouch - Who helped you? (Requires confirmed nickname) */}
+              {step === 2 && confirmedUserNickname && (
+                <div className="pt-4">
+                  {" "}
+                  {/* Added pt-4 for spacing */}
+                  <h2 className="mb-4 text-left text-xl font-semibold">
+                    Who helped you?
+                  </h2>
+                  <Combobox
+                    value={selectedSeller}
+                    onChange={(opt: User | null) => {
+                      // Allow null for clearing
+                      setSelectedSeller(opt);
+                      if (opt) {
+                        setStep(3); // Move to review step only if a seller is selected
+                      }
+                    }}
+                  >
+                    <ComboboxInput
+                      className="w-full rounded border px-2 py-1"
+                      onChange={(e) => setQuery(e.target.value)}
+                      displayValue={(opt: User) => opt?.nickname || ""}
+                      placeholder="Search by nickname..."
+                    />
+                    <ComboboxOptions className="mt-1 max-h-60 overflow-auto rounded border">
+                      {options.length > 0
+                        ? options.map((opt) => (
+                            <ComboboxOption
+                              key={opt.address}
+                              value={opt}
+                              className="cursor-pointer px-2 py-1 hover:bg-gray-100"
+                            >
+                              {opt.nickname} ({opt.address.substring(0, 6)}...)
+                            </ComboboxOption>
+                          ))
+                        : debouncedQuery.trim() && (
+                            <div className="px-2 py-1 text-gray-500">
+                              No results found
+                            </div>
+                          )}
+                    </ComboboxOptions>
+                  </Combobox>
+                </div>
+              )}
+
+              {/* Step 3: Leave a Review (Requires confirmed nickname and selected seller) */}
+              {step === 3 && selectedSeller && confirmedUserNickname && (
+                <div className="pt-4">
+                  <h2 className="mb-4 text-left text-xl font-semibold">
+                    Leave a Review for {selectedSeller.nickname}
+                  </h2>
+                  <textarea
+                    className="w-full rounded border p-2"
+                    rows={4}
+                    maxLength={280}
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="What did they do for you?"
+                  />
+                  {attestationMutation.isError && (
+                    <AlertBox
+                      type="error"
+                      title="Submission Error"
+                      messages={[
+                        (attestationMutation.error as Error)?.message ||
+                          "An error occurred.",
+                      ]}
+                      className="mt-2"
+                    />
+                  )}
+                  <div className="mt-4 space-x-2">
+                    <Button
+                      onClick={submitAttestation}
+                      variant="primary"
+                      disabled={
+                        !canSubmitVouch || attestationMutation.isPending
+                      }
+                    >
+                      {attestationMutation.isPending
+                        ? "Submitting..."
+                        : "Submit Vouch"}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setStep(1);
+                        setSelectedSeller(null);
+                        setReviewText("");
+                        setQuery("");
+                        attestationMutation.reset(); // Reset mutation state if starting over
+                      }}
+                      variant="secondary"
+                    >
+                      Start Over
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
-            <Button onClick={login} variant="primary">
-              Join with Privy
-            </Button>
+            <LandingContent onLogin={login} />
           )}
         </div>
-
-        {/* Step-dependent content, only shown if authenticated and nickname is set (or being set) */}
-        {authenticated && user && (
-          <>
-            {/* Step 2: Vouch - Who helped you? (Requires confirmed nickname) */}
-            {step === 2 && confirmedUserNickname && (
-              <div className="pt-4">
-                {" "}
-                {/* Added pt-4 for spacing */}
-                <h2 className="mb-4 text-left text-xl font-semibold">
-                  Who helped you?
-                </h2>
-                <Combobox
-                  value={selectedSeller}
-                  onChange={(opt: User | null) => {
-                    // Allow null for clearing
-                    setSelectedSeller(opt);
-                    if (opt) {
-                      setStep(3); // Move to review step only if a seller is selected
-                    }
-                  }}
-                >
-                  <ComboboxInput
-                    className="w-full rounded border px-2 py-1"
-                    onChange={(e) => setQuery(e.target.value)}
-                    displayValue={(opt: User) => opt?.nickname || ""}
-                    placeholder="Search by nickname..."
-                  />
-                  <ComboboxOptions className="mt-1 max-h-60 overflow-auto rounded border">
-                    {options.length > 0
-                      ? options.map((opt) => (
-                          <ComboboxOption
-                            key={opt.address}
-                            value={opt}
-                            className="cursor-pointer px-2 py-1 hover:bg-gray-100"
-                          >
-                            {opt.nickname} ({opt.address.substring(0, 6)}...)
-                          </ComboboxOption>
-                        ))
-                      : debouncedQuery.trim() && (
-                          <div className="px-2 py-1 text-gray-500">
-                            No results found
-                          </div>
-                        )}
-                  </ComboboxOptions>
-                </Combobox>
-              </div>
-            )}
-
-            {/* Step 3: Leave a Review (Requires confirmed nickname and selected seller) */}
-            {step === 3 && selectedSeller && confirmedUserNickname && (
-              <div className="pt-4">
-                <h2 className="mb-4 text-left text-xl font-semibold">
-                  Leave a Review for {selectedSeller.nickname}
-                </h2>
-                <textarea
-                  className="w-full rounded border p-2"
-                  rows={4}
-                  maxLength={280}
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="What did they do for you?"
-                />
-                {attestationMutation.isError && (
-                  <AlertBox
-                    type="error"
-                    title="Submission Error"
-                    messages={[
-                      (attestationMutation.error as Error)?.message ||
-                        "An error occurred.",
-                    ]}
-                    className="mt-2"
-                  />
-                )}
-                <div className="mt-4 space-x-2">
-                  <Button
-                    onClick={submitAttestation}
-                    variant="primary"
-                    disabled={!canSubmitVouch || attestationMutation.isPending}
-                  >
-                    {attestationMutation.isPending
-                      ? "Submitting..."
-                      : "Submit Vouch"}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setStep(1);
-                      setSelectedSeller(null);
-                      setReviewText("");
-                      setQuery("");
-                      attestationMutation.reset(); // Reset mutation state if starting over
-                    }}
-                    variant="secondary"
-                  >
-                    Start Over
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </div>
     </>
   );
