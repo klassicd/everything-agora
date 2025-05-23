@@ -573,6 +573,13 @@ export default function Index() {
                     onChange={(e) => setReviewText(e.target.value)}
                     placeholder="What did they do for you?"
                   />
+                  <p className="mt-2 text-sm text-gray-500">
+                    This creates a cryptographically signed attestation.
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Your reviews help participants build a verifiable history of
+                    mutual aid and collaboration.
+                  </p>
                   {attestationMutation.isError && (
                     <AlertBox
                       type="error"
