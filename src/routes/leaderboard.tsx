@@ -8,7 +8,6 @@ const baseUrl = import.meta.env.VITE_API_URL;
 interface LeaderboardEntry {
   nickname: string;
   address: string;
-  privyId: string;
   totalAttestationsReceived: number;
 }
 
@@ -111,7 +110,7 @@ function Leaderboard() {
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {leaderboardData.map((entry, index) => (
-                <tr key={entry.privyId}>
+                <tr key={entry.address}>
                   <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
                     {index + 1}
                   </td>
