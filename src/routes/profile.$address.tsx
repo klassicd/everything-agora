@@ -1,9 +1,13 @@
+import {
+  createOffchainURL,
+  type AttestationShareablePackageObject,
+} from "@ethereum-attestation-service/eas-sdk";
+import { PencilIcon } from "@heroicons/react/24/outline";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "../components/Button";
-import { PencilIcon } from "@heroicons/react/24/outline";
 
 const baseUrl = import.meta.env.VITE_API_URL;
 
@@ -12,6 +16,7 @@ interface AttestationReceived {
   buyerNickname: string;
   uid: string;
   createdAt: string;
+  payloadJson: AttestationShareablePackageObject;
 }
 
 interface AttestationGiven {
@@ -19,6 +24,7 @@ interface AttestationGiven {
   sellerNickname: string;
   uid: string;
   createdAt: string;
+  payloadJson: AttestationShareablePackageObject;
 }
 
 interface ProfileData {
@@ -26,6 +32,11 @@ interface ProfileData {
   attestationsReceived: AttestationReceived[];
   attestationsGiven: AttestationGiven[];
   address: string; // Assuming API returns the address for clarity, or use param
+}
+
+function easScanLink(payloadJson: AttestationShareablePackageObject) {
+  const offchainUrl = createOffchainURL(payloadJson);
+  return `https://sepolia.easscan.org${offchainUrl}`;
 }
 
 async function fetchProfileData(
@@ -81,6 +92,8 @@ function ProfilePage() {
     enabled: authenticated && !!address,
     retry: false,
   });
+
+  console.log(profileData);
 
   const currentUserAddress = wallets[0]?.address;
   const isOwnProfile =
@@ -249,25 +262,43 @@ function ProfilePage() {
               <p className="text-gray-500">No reviews received yet.</p>
             ) : (
               <ul className="space-y-4">
-                {profileData.attestationsReceived.map((attestation) => (
-                  <li
-                    key={attestation.uid}
-                    className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-                  >
-                    <p className="text-sm text-gray-500">
-                      From:{" "}
-                      <span className="font-medium text-gray-700">
-                        {attestation.buyerNickname}
-                      </span>
-                    </p>
-                    <p className="mt-1 text-gray-800">
-                      {attestation.reviewText}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-400">
-                      {new Date(attestation.createdAt).toLocaleDateString()}
-                    </p>
-                  </li>
-                ))}
+                {profileData.attestationsReceived.map((attestation) => {
+                  const verificationLink = easScanLink(attestation.payloadJson);
+
+                  return (
+                    <li
+                      key={attestation.uid}
+                      className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            From:{" "}
+                            <span className="font-medium text-gray-700">
+                              {attestation.buyerNickname}
+                            </span>
+                          </p>
+                          <p className="mt-1 text-gray-800">
+                            {attestation.reviewText}
+                          </p>
+                        </div>
+                        {verificationLink && (
+                          <a
+                            href={verificationLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 ml-2 text-xs whitespace-nowrap text-indigo-600 hover:text-indigo-800 hover:underline"
+                          >
+                            Verify on EASSscan
+                          </a>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs text-gray-400">
+                        {new Date(attestation.createdAt).toLocaleDateString()}
+                      </p>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -280,25 +311,42 @@ function ProfilePage() {
               <p className="text-gray-500">No reviews given yet.</p>
             ) : (
               <ul className="space-y-4">
-                {profileData.attestationsGiven.map((attestation) => (
-                  <li
-                    key={attestation.uid}
-                    className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-                  >
-                    <p className="text-sm text-gray-500">
-                      To:{" "}
-                      <span className="font-medium text-gray-700">
-                        {attestation.sellerNickname}
-                      </span>
-                    </p>
-                    <p className="mt-1 text-gray-800">
-                      {attestation.reviewText}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-400">
-                      {new Date(attestation.createdAt).toLocaleDateString()}
-                    </p>
-                  </li>
-                ))}
+                {profileData.attestationsGiven.map((attestation) => {
+                  const verificationLink = easScanLink(attestation.payloadJson);
+                  return (
+                    <li
+                      key={attestation.uid}
+                      className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            To:{" "}
+                            <span className="font-medium text-gray-700">
+                              {attestation.sellerNickname}
+                            </span>
+                          </p>
+                          <p className="mt-1 text-gray-800">
+                            {attestation.reviewText}
+                          </p>
+                        </div>
+                        {verificationLink && (
+                          <a
+                            href={verificationLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 ml-2 text-xs whitespace-nowrap text-indigo-600 hover:text-indigo-800 hover:underline"
+                          >
+                            Verify on EASSscan
+                          </a>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs text-gray-400">
+                        {new Date(attestation.createdAt).toLocaleDateString()}
+                      </p>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
