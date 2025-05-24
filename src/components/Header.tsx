@@ -33,6 +33,10 @@ export default function Header() {
         params: { address: currentAddress },
       });
     }
+    navItems.push({
+      name: "About",
+      to: "/about",
+    });
     return navItems;
   }, [authenticated, user]);
 

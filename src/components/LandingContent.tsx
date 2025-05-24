@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Button } from "./Button";
 
 interface LandingContentProps {
@@ -17,9 +18,14 @@ export function LandingContent({ onLogin }: LandingContentProps) {
           A space for peer-to-peer exchange of skills, services, support and
           recognition.
         </p>
-        <Button onClick={onLogin} variant="primary">
-          Join Community
-        </Button>
+        <div className="flex items-center justify-center md:justify-start">
+          <Button onClick={onLogin} variant="primary">
+            Join Community
+          </Button>
+          <Link to="/about" className="ml-4">
+            <Button variant="secondary">Learn More</Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
