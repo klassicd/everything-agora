@@ -337,7 +337,7 @@ function ProfilePage() {
                             rel="noopener noreferrer"
                             className="mt-1 ml-2 text-xs whitespace-nowrap text-indigo-600 hover:text-indigo-800 hover:underline"
                           >
-                            Verify on EASSscan
+                            Verify on EASscan
                           </a>
                         )}
                       </div>
